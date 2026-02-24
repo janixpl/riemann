@@ -1,6 +1,13 @@
 # Binaries for programs and plugins
 main
 riemann
+
+dimensions
+lense
+scale
+surface
+vector_field
+
 *.exe
 *.exe~
 *.so
