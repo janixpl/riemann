@@ -9,6 +9,8 @@ surface
 vector_field
 ulam
 spiral3d
+gray
+various
 
 *.exe
 *.exe~
