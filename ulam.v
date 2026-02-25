@@ -3,7 +3,7 @@ import math
 
 const width = 1000
 const height = 800
-const cell_size = 2 // Bardzo małe punkty dla ogromnej rozdzielczości
+const cell_size = 2
 const max_n = 300000
 
 struct App {
@@ -17,10 +17,11 @@ mut:
 
 struct Pos {
 mut:
-	x i16 // Używamy i16 by oszczędzić pamięć przy 300k
+	x i16
 	y i16
 }
 
+// Test pierwszości
 fn is_prime(n int) bool {
 	if n <= 1 { return false }
 	if n <= 3 { return true }
@@ -31,6 +32,24 @@ fn is_prime(n int) bool {
 		i += 6
 	}
 	return true
+}
+
+// Funkcja sprawdzająca, czy liczba n należy do ciągu Eulera: x^2 + x + 41
+fn is_euler(n int) bool {
+	if n < 41 { return false }
+	// Rozwiązujemy równanie kwadratowe x^2 + x + (41 - n) = 0
+	// Delta = 1 - 4 * 1 * (41 - n) = 1 - 164 + 4n = 4n - 163
+	delta := 4.0 * f64(n) - 163.0
+	if delta < 0 { return false }
+	sqrt_delta := math.sqrt(delta)
+	// Sprawdzamy czy pierwiastek z delty jest liczbą całkowitą
+	if math.abs(sqrt_delta - math.round(sqrt_delta)) < 0.0001 {
+		x := (-1.0 + sqrt_delta) / 2.0
+		if x >= 0 && math.abs(x - math.round(x)) < 0.0001 {
+			return true
+		}
+	}
+	return false
 }
 
 fn frame(mut app App) {
@@ -52,19 +71,27 @@ fn frame(mut app App) {
 		dx := f32(500 + cur_x * cell_size)
 		dy := f32(400 + cur_y * cell_size)
 
-		// Rysujemy tylko to, co widać na ekranie (Clipping)
 		if dx > 0 && dx < width && dy > 0 && dy < height {
 			if is_prime(n) {
-				// Sprawdzamy hover tylko dla punktów blisko myszy
-				is_hover := math.abs(app.mouse_x - dx) < cell_size &&
-				            math.abs(app.mouse_y - dy) < cell_size
+				// Sprawdzamy czy to wielomian Eulera
+				euler := is_euler(n)
 
-				mut color := gg.Color{60, 100, 200, 180}
+				is_hover := math.abs(app.mouse_x - dx) < 2 &&
+				            math.abs(app.mouse_y - dy) < 2
+
+				mut color := gg.Color{60, 100, 200, 150} // Standardowy błękit
+
+				if euler {
+					color = gg.Color{255, 215, 0, 255} // ZŁOTO dla Eulera
+				}
+
 				if is_hover {
 					color = gg.white
-					print('\rLICZBA: ${n:-8} | POS: ${cur_x},${-cur_y}       ')
+					print('\rLICZBA: ${n:-8} | WIELOMIAN EULERA: ${euler}      ')
 				}
-				app.ctx.draw_rect_filled(dx, dy, 2, 2, color)
+
+				size := if euler { f32(3) } else { f32(2) }
+				app.ctx.draw_rect_filled(dx, dy, size, size, color)
 			}
 		}
 
@@ -96,8 +123,8 @@ fn event(e &gg.Event, mut app App) {
 			app.mouse_y = e.mouse_y
 		}
 		.key_down {
-			if e.key_code == .up { app.limit += 10000 }
-			if e.key_code == .down { app.limit -= 10000 }
+			if e.key_code == .up { app.limit += 20000 }
+			if e.key_code == .down { app.limit -= 20000 }
 		}
 		else {}
 	}
@@ -106,7 +133,7 @@ fn event(e &gg.Event, mut app App) {
 fn main() {
 	mut app := &App{}
 	app.ctx = gg.new_context(
-		width: width, height: height, window_title: 'Deep Ulam Spiral (250k)',
+		width: width, height: height, window_title: 'Deep Ulam: Euler Polynomial Highlight',
 		frame_fn: frame, event_fn: event, user_data: app
 	)
 	app.ctx.run()
